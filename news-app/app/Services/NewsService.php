@@ -16,10 +16,10 @@ class NewsService
     public function saveArticleCluster(int $categoryId, array $packet): array
     {
         $savedArticles = [];
-        $publishedAt = ! empty($packet['pubDate']) ? Carbon::parse($packet['pubDate']) : null;
+        $publishedAt = !empty($packet['pubDate']) ? Carbon::parse($packet['pubDate']) : null;
 
         // 1. Save Main Article
-        if (! empty($packet['main']) && empty($packet['main']['skipped']) && ! empty($packet['main']['decoded_url'])) {
+        if (!empty($packet['main']) && empty($packet['main']['skipped']) && !empty($packet['main']['decoded_url'])) {
             $sourceUrl = $packet['main']['source_url'] ?? null;
             $mainArticle = $this->saveArticle($categoryId, [
                 'guid' => $packet['guid'] ?? null,
@@ -36,11 +36,10 @@ class NewsService
                 $savedArticles[] = $mainArticle;
 
                 // 2. Save Related Articles
-                if (! empty($packet['related'])) {
+                if (!empty($packet['related'])) {
                     foreach ($packet['related'] as $related) {
-                        if (empty($related['skipped']) && ! empty($related['decoded_url'])) {
+                        if (empty($related['skipped']) && !empty($related['decoded_url'])) {
                             $child = $this->saveArticle($categoryId, [
-                                'parent_id' => $mainArticle->id,
                                 'title' => $related['title'] ?? 'Untitled',
                                 'original_url' => $related['original_url'],
                                 'decoded_url' => $related['decoded_url'],
@@ -50,6 +49,7 @@ class NewsService
                             ]);
 
                             if ($child) {
+                                $mainArticle->relatedArticles()->syncWithoutDetaching([$child->id]);
                                 $savedArticles[] = $child;
                             }
                         }
@@ -66,12 +66,12 @@ class NewsService
      */
     public function saveArticle(int $categoryId, array $data): ?Article
     {
-        $uniqueKey = ! empty($data['guid']) ? ['guid' => $data['guid']] : ['original_url' => $data['original_url']];
+        $uniqueKey = !empty($data['guid']) ? ['guid' => $data['guid']] : ['original_url' => $data['original_url']];
 
         // Clean Title
         $title = $data['title'];
-        if (! empty($data['source_name'])) {
-            $sourceSuffix = ' - '.$data['source_name'];
+        if (!empty($data['source_name'])) {
+            $sourceSuffix = ' - ' . $data['source_name'];
             if (\Illuminate\Support\Str::endsWith($title, $sourceSuffix)) {
                 $title = \Illuminate\Support\Str::replaceLast($sourceSuffix, '', $title);
             }
@@ -79,7 +79,7 @@ class NewsService
 
         // Handle Source
         $sourceId = null;
-        if (! empty($data['source_name'])) {
+        if (!empty($data['source_name'])) {
             $source = \App\Models\Source::updateOrCreate(
                 ['name' => $data['source_name']],
                 [
@@ -94,11 +94,9 @@ class NewsService
             $article = Article::updateOrCreate(
                 $uniqueKey,
                 [
-                    'parent_id' => $data['parent_id'] ?? null,
                     'original_url' => $data['original_url'],
                     'title' => $title,
                     'decoded_url' => $data['decoded_url'],
-                    'source_id' => $sourceId,
                     'source_name' => $data['source_name'] ?? null,
                     'source_url' => $data['source_url'] ?? null,
                     'source_domain' => $data['source_domain'] ?? $this->extractDomain($data['decoded_url'] ?? null),
@@ -107,11 +105,15 @@ class NewsService
                 ]
             );
 
+            if ($sourceId) {
+                $article->sources()->syncWithoutDetaching([$sourceId]);
+            }
+
             $article->categories()->syncWithoutDetaching([$categoryId]);
 
             return $article;
         } catch (\Exception $e) {
-            Log::error('Failed to save article: '.$e->getMessage());
+            Log::error('Failed to save article: ' . $e->getMessage());
 
             return null;
         }
@@ -122,7 +124,7 @@ class NewsService
      */
     public function extractDomain(?string $url): ?string
     {
-        if (! $url) {
+        if (!$url) {
             return null;
         }
 

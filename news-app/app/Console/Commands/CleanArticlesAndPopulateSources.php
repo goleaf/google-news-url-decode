@@ -24,7 +24,7 @@ class CleanArticlesAndPopulateSources extends Command
         foreach ($articles as $article) {
             // 1. Handle Source
             if ($article->source_name) {
-                $domain = ! empty($article->source_url) ? $this->extractDomain($article->source_url) : null;
+                $domain = !empty($article->source_url) ? $this->extractDomain($article->source_url) : null;
                 \Illuminate\Support\Facades\Log::info("Cleaning article {$article->id}: URL={$article->source_url}, Domain={$domain}");
 
                 $source = Source::updateOrCreate(
@@ -37,10 +37,8 @@ class CleanArticlesAndPopulateSources extends Command
 
                 // 2. Clean Title
                 // Google News titles are usually "Title - Source Name"
-                $sourceSuffix = ' - '.$article->source_name;
-                $updateData = [
-                    'source_id' => $source->id,
-                ];
+                $sourceSuffix = ' - ' . $article->source_name;
+                $updateData = [];
 
                 if (Str::endsWith($article->title, $sourceSuffix)) {
                     $updateData['title'] = Str::replaceLast($sourceSuffix, '', $article->title);
@@ -50,30 +48,33 @@ class CleanArticlesAndPopulateSources extends Command
                     $updateData['source_domain'] = $domain;
                 }
 
-                // 3. Inherit parent GUID if empty and has parent
-                if (empty($article->guid) && $article->parent_id) {
-                    $parent = Article::find($article->parent_id);
-                    if ($parent && ! empty($parent->guid)) {
+                // 3. Inherit parent GUID if empty and has parents
+                if (empty($article->guid) && $article->parentArticles()->exists()) {
+                    $parent = $article->parentArticles()->first();
+                    if ($parent && !empty($parent->guid)) {
                         $updateData['guid'] = $parent->guid;
                     }
                 }
 
-                if (! empty($updateData)) {
+                if (!empty($updateData)) {
                     $article->update($updateData);
                 }
+
+                // Sync Source
+                $article->sources()->syncWithoutDetaching([$source->id]);
             }
             $bar->advance();
         }
 
         $bar->finish();
         $this->newline();
-        $this->info('Done! Created '.Source::count().' sources.');
+        $this->info('Done! Created ' . Source::count() . ' sources.');
     }
 
     protected function extractDomain($url)
     {
         $host = parse_url($url, PHP_URL_HOST);
-        if (! $host) {
+        if (!$host) {
             return null;
         }
 

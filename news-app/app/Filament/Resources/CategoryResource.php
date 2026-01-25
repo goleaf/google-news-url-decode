@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CategoryResource\Pages;
+use App\Filament\Resources\CategoryResource\RelationManagers;
 use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -34,7 +35,7 @@ class CategoryResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return \Illuminate\Support\Facades\Cache::remember('category_count', 300, fn () => (string) static::getModel()::count());
+        return \Illuminate\Support\Facades\Cache::remember('category_count', 300, fn() => (string) static::getModel()::count());
     }
 
     public static function getModelLabel(): string
@@ -54,8 +55,9 @@ class CategoryResource extends Resource
                 Forms\Components\Section::make('Category Hierarchy')
                     ->collapsible()
                     ->schema([
-                        Forms\Components\Select::make('parent_id')
-                            ->relationship('parent', 'name')
+                        Forms\Components\Select::make('parentCategories')
+                            ->relationship('parentCategories', 'name')
+                            ->multiple()
                             ->searchable()
                             ->searchDebounce(500)
                             ->preload()
@@ -69,19 +71,19 @@ class CategoryResource extends Resource
                                     ->prefixIconColor('emerald')
                                     ->placeholder('Enter category name...'),
                             ])
-                            ->placeholder('Select Parent Category (Optional)'),
+                            ->placeholder('Select Parent Categories (Optional)'),
+                    ]),
+                Forms\Components\Section::make('Basic Information')
+                    ->collapsible()
+                    ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
                             ->maxLength(255)
                             ->prefixIcon('heroicon-m-folder')
                             ->prefixIconColor('emerald')
                             ->placeholder('Enter category name...'),
-                    ]),                    Forms\Components\Section::make('Configuration')
-                    ->collapsible()
-                    ->schema([
                         Forms\Components\Textarea::make('rss_url')
                             ->label('RSS Feed URL')
-                            ->columnSpanFull()
                             ->placeholder('Enter RSS feed URL...'),
                     ]),
             ]);
@@ -90,6 +92,7 @@ class CategoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn($query) => $query->with(['parentCategories'])->withCount('subCategories'))
             ->deferLoading()
             ->poll('10s')
             ->persistFiltersInSession()
@@ -102,26 +105,34 @@ class CategoryResource extends Resource
                     ->iconColor('emerald')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('parent.name')
-                    ->label('Parent')
+                Tables\Columns\TextColumn::make('sub_categories_count')
+                    ->label('Children')
                     ->badge()
                     ->color('amber')
                     ->icon('heroicon-m-folder-open')
-                    ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('rss_url')
                     ->icon('heroicon-m-rss')
                     ->iconColor('orange')
                     ->copyable(),
+
+                Tables\Columns\TextColumn::make('parentCategories.name')
+                    ->label('Parents')
+                    ->badge()
+                    ->color('sky')
+                    ->icon('heroicon-m-folder')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('articles_count')
                     ->counts('articles')
                     ->badge()
                     ->icon('heroicon-m-document-duplicate')
                     ->color('sky')
                     ->label('Articles')
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()),                    ])->filters([
-                        //
-                    ])
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()),
+            ])->filters([
+                    //
+                ])
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->iconButton()
@@ -141,7 +152,8 @@ class CategoryResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ParentCategoriesRelationManager::class,
+            RelationManagers\SubCategoriesRelationManager::class,
         ];
     }
 

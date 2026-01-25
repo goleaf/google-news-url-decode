@@ -3,7 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ArticleResource\Pages;
-use App\Filament\Resources\ArticleResource\RelationManagers\ChildrenRelationManager;
+use App\Filament\Resources\ArticleResource\RelationManagers\ParentArticlesRelationManager;
+use App\Filament\Resources\ArticleResource\RelationManagers\RelatedArticlesRelationManager;
 use App\Models\Article;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -63,7 +64,7 @@ class ArticleResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return \Illuminate\Support\Facades\Cache::remember('article_count', 300, fn () => (string) static::getModel()::count());
+        return \Illuminate\Support\Facades\Cache::remember('article_count', 300, fn() => (string) static::getModel()::count());
     }
 
     public static function getNavigationBadgeColor(): ?string
@@ -107,16 +108,18 @@ class ArticleResource extends Resource
                             ])
                             ->required(),
 
-                        Forms\Components\Select::make('parent_id')
-                            ->relationship('parent', 'title')
+
+                        Forms\Components\Select::make('sources')
+                            ->relationship('sources', 'name')
+                            ->multiple()
+                            ->preload()
                             ->searchable()
-                            ->searchDebounce(500)
-                            ->prefixIcon('heroicon-m-rectangle-stack')
-                            ->prefixIconColor('amber')
-                            ->placeholder('No Parent (Main Article)'),
+                            ->prefixIcon('heroicon-m-globe-alt')
+                            ->prefixIconColor('indigo')
+                            ->placeholder('Select Sources'),
 
                         Forms\Components\TextInput::make('source_name')
-                            ->label('Source')
+                            ->label('Source Name (Override)')
                             ->prefixIcon('heroicon-m-globe-alt')
                             ->prefixIconColor('indigo')
                             ->placeholder('Enter source name...'),
@@ -136,7 +139,7 @@ class ArticleResource extends Resource
 
                         Forms\Components\Placeholder::make('guid')
                             ->label('GUID')
-                            ->content(fn ($record) => $record?->guid ?? '-'),
+                            ->content(fn($record) => $record?->guid ?? '-'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Links')
@@ -161,7 +164,7 @@ class ArticleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['categories', 'parent'])->withCount('children'))
+            ->modifyQueryUsing(fn($query) => $query->with(['categories', 'parentArticles', 'sources'])->withCount('relatedArticles'))
             ->deferLoading()
             ->poll('5s')
             ->persistFiltersInSession()
@@ -177,7 +180,7 @@ class ArticleResource extends Resource
                     ->weight('bold')
                     ->icon('heroicon-m-document-text')
                     ->iconColor('sky')
-                    ->tooltip(fn ($record) => $record->title),
+                    ->tooltip(fn($record) => $record->title),
 
                 Tables\Columns\TextColumn::make('categories.name')
                     ->badge()
@@ -186,23 +189,29 @@ class ArticleResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('children_count')
-                    ->label('Related')
+                Tables\Columns\TextColumn::make('related_articles_count')
+                    ->label('Related News')
                     ->badge()
                     ->color('amber')
                     ->icon('heroicon-m-rectangle-stack')
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('source_name')
+                Tables\Columns\TextColumn::make('sources.name')
+                    ->label('Sources')
                     ->badge()
                     ->color('indigo')
                     ->icon('heroicon-m-globe-alt')
                     ->iconColor('indigo')
-                    ->url(fn ($record) => $record->source_url)
-                    ->openUrlInNewTab()
-                    ->sortable()
                     ->toggleable(),
+
+                Tables\Columns\TextColumn::make('source_name')
+                    ->label('Source (legacy)')
+                    ->badge()
+                    ->color('indigo')
+                    ->icon('heroicon-m-globe-alt')
+                    ->iconColor('indigo')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('source_domain')
                     ->label('Domain')
@@ -226,9 +235,9 @@ class ArticleResource extends Resource
                     ->iconColor('indigo')
                     ->color('indigo')
                     ->copyable()
-                    ->url(fn ($record) => $record->decoded_url)
+                    ->url(fn($record) => $record->decoded_url)
                     ->openUrlInNewTab()
-                    ->formatStateUsing(fn () => 'Open Link'),
+                    ->formatStateUsing(fn() => 'Open Link'),
 
                 Tables\Columns\TextColumn::make('original_url')
                     ->label('Original Link')
@@ -236,9 +245,9 @@ class ArticleResource extends Resource
                     ->iconColor('slate')
                     ->color('slate')
                     ->copyable()
-                    ->url(fn ($record) => $record->original_url)
+                    ->url(fn($record) => $record->original_url)
                     ->openUrlInNewTab()
-                    ->formatStateUsing(fn () => 'Open Original')
+                    ->formatStateUsing(fn() => 'Open Original')
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('guid')
@@ -249,10 +258,12 @@ class ArticleResource extends Resource
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('parent.title')
-                    ->label('Parent Cluster')
-                    ->icon('heroicon-m-rectangle-stack')
-                    ->iconColor('amber')
+                Tables\Columns\TextColumn::make('parentArticles.title')
+                    ->label('Clusters')
+                    ->badge()
+                    ->color('sky')
+                    ->icon('heroicon-m-rectangle-group')
+                    ->description('Part of cluster')
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -269,7 +280,7 @@ class ArticleResource extends Resource
                     ->multiple()
                     ->preload(),
                 Tables\Filters\Filter::make('has_decoded_url')
-                    ->query(fn ($query) => $query->whereNotNull('decoded_url'))
+                    ->query(fn($query) => $query->whereNotNull('decoded_url'))
                     ->toggle(),
                 Tables\Filters\Filter::make('published_at')
                     ->form([
@@ -284,11 +295,11 @@ class ArticleResource extends Resource
                         return $query
                             ->when(
                                 $data['published_from'],
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('published_at', '>=', $date),
+                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('published_at', '>=', $date),
                             )
                             ->when(
                                 $data['published_until'],
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('published_at', '<=', $date),
+                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('published_at', '<=', $date),
                             );
                     }),
             ])
@@ -321,7 +332,8 @@ class ArticleResource extends Resource
     public static function getRelations(): array
     {
         return [
-            ChildrenRelationManager::class,
+            ParentArticlesRelationManager::class,
+            RelatedArticlesRelationManager::class,
         ];
     }
 
@@ -330,7 +342,6 @@ class ArticleResource extends Resource
         return [
             'index' => Pages\ListArticles::route('/'),
             'create' => Pages\CreateArticle::route('/create'),
-            'view' => Pages\ViewArticle::route('/{record}'),
             'edit' => Pages\EditArticle::route('/{record}/edit'),
         ];
     }

@@ -29,6 +29,25 @@ class ArticleResourceRelationTest extends TestCase
             'record' => $article->getRouteKey(),
         ])
             ->assertSuccessful()
-            ->assertSee('Related Articles'); // The title of the relation manager
+            ->assertSee('Related Articles');
+    }
+
+    public function test_edit_page_shows_parent_and_siblings_when_editing_child()
+    {
+        $user = User::factory()->create();
+        $parent = Article::factory()->create(['title' => 'Parent Article']);
+        $child1 = Article::factory()->create(['parent_id' => $parent->id, 'title' => 'Child 1']);
+        $child2 = Article::factory()->create(['parent_id' => $parent->id, 'title' => 'Child 2']);
+
+        $this->actingAs($user);
+
+        // Edit Child 1, should see Parent and Child 2
+        Livewire::test(ArticleResource\Pages\EditArticle::class, [
+            'record' => $child1->getRouteKey(),
+        ])
+            ->assertSuccessful()
+            ->assertSee('Parent Article')
+            ->assertSee('Child 2')
+            ->assertDontSee('Child 1', false); // Should not see itself in the related list (excluding search results/other context)
     }
 }

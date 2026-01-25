@@ -11,8 +11,8 @@ class Source extends Model
 
     protected $fillable = ['name', 'url', 'domain', 'is_active'];
 
-    public function articles(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function articles(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->hasMany(Article::class);
+        return $this->belongsToMany(Article::class, 'article_source');
     }
 }

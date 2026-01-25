@@ -39,7 +39,7 @@
             </div>
             
             <!-- Polling Div -->
-            <div wire:poll.750ms="checkProgress" x-show="processing"></div>
+            <div wire:poll.2000ms="checkProgress"></div>
             
             <div 
                 class="p-4 h-96 overflow-y-auto font-mono text-sm bg-black text-gray-300" 

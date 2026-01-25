@@ -12,16 +12,29 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'rss_url', 'parent_id'];
+    protected $fillable = ['name', 'rss_url'];
 
-    public function parent(): BelongsTo
+    public static function syncFromConfig(): void
     {
-        return $this->belongsTo(Category::class, 'parent_id');
+        $configCategories = config('news.categories', []);
+
+        foreach ($configCategories as $name => $url) {
+            $rssUrl = str_replace('/topics/', '/rss/topics/', $url);
+            static::updateOrCreate(
+                ['name' => $name],
+                ['rss_url' => $rssUrl]
+            );
+        }
     }
 
-    public function children(): HasMany
+    public function parentCategories(): BelongsToMany
     {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->belongsToMany(Category::class, 'category_related', 'category_id', 'parent_id')->withTimestamps();
+    }
+
+    public function subCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'category_related', 'parent_id', 'category_id')->withTimestamps();
     }
 
     public function articles(): BelongsToMany

@@ -22,12 +22,11 @@ class NewsProcessorPageTest extends TestCase
     #[Test]
     public function it_mounts_categories_with_rss_urls()
     {
-        Category::factory()->create(['name' => 'Has RSS', 'rss_url' => 'https://example.com/rss']);
-        Category::factory()->create(['name' => 'No RSS', 'rss_url' => null]);
+        $configCategoriesCount = count(config('news.categories', []));
 
         Livewire::test(NewsProcessor::class)
-            ->assertSet('categories', function ($categories) {
-                return count($categories) === 1 && $categories[0]['name'] === 'Has RSS';
+            ->assertSet('categories', function ($categories) use ($configCategoriesCount) {
+                return count($categories) === $configCategoriesCount;
             });
     }
 

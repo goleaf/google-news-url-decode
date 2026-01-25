@@ -12,26 +12,26 @@ class Article extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'original_url', 'decoded_url', 'source_id', 'source_name', 'source_url', 'source_domain', 'guid', 'published_at', 'parent_id'];
+    protected $fillable = ['title', 'original_url', 'decoded_url', 'source_name', 'source_url', 'source_domain', 'guid', 'published_at'];
 
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class);
     }
 
-    public function source(): BelongsTo
+    public function sources(): BelongsToMany
     {
-        return $this->belongsTo(Source::class);
+        return $this->belongsToMany(Source::class, 'article_source');
     }
 
-    // Keep parent/children for hierarchy
-    public function parent(): BelongsTo
+    // Many-to-many relationships
+    public function parentArticles(): BelongsToMany
     {
-        return $this->belongsTo(Article::class, 'parent_id');
+        return $this->belongsToMany(Article::class, 'article_related', 'related_id', 'parent_id')->withTimestamps();
     }
 
-    public function children(): HasMany
+    public function relatedArticles(): BelongsToMany
     {
-        return $this->hasMany(Article::class, 'parent_id');
+        return $this->belongsToMany(Article::class, 'article_related', 'parent_id', 'related_id')->withTimestamps();
     }
 }

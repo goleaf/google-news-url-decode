@@ -36,11 +36,54 @@ class NewsProcessor extends Page
 
     public function mount()
     {
+        Category::syncFromConfig();
+
         $this->categories = Category::whereNotNull('rss_url')
             ->where('rss_url', '!=', '')
             ->get()
             ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'rss_url' => $c->rss_url])
             ->toArray();
+
+        // Check for existing state
+        $state = \Illuminate\Support\Facades\Cache::get($this->getPersistentStateKey());
+        if ($state && $this->isRunning($state['pid'] ?? null)) {
+            $this->isProcessing = true;
+            $this->status = $state['status'] ?? 'processing';
+            $this->pid = $state['pid'];
+            $this->logFilePath = $state['logFilePath'];
+            $this->excludeFilePath = $state['excludeFilePath'];
+            $this->currentCategoryIndex = $state['currentCategoryIndex'] ?? 0;
+            $this->processedCount = $state['processedCount'] ?? 0;
+            $this->savedCount = $state['savedCount'] ?? 0;
+            $this->logOffset = $state['logOffset'] ?? 0;
+            $this->logs = $state['logs'] ?? [];
+        }
+    }
+
+    protected function getPersistentStateKey()
+    {
+        return 'news_processor_state';
+    }
+
+    protected function saveState()
+    {
+        \Illuminate\Support\Facades\Cache::put($this->getPersistentStateKey(), [
+            'isProcessing' => $this->isProcessing,
+            'status' => $this->status,
+            'pid' => $this->pid,
+            'logFilePath' => $this->logFilePath,
+            'excludeFilePath' => $this->excludeFilePath,
+            'currentCategoryIndex' => $this->currentCategoryIndex,
+            'processedCount' => $this->processedCount,
+            'savedCount' => $this->savedCount,
+            'logOffset' => $this->logOffset,
+            'logs' => $this->logs,
+        ], 3600); // 1 hour TTL
+    }
+
+    protected function clearState()
+    {
+        \Illuminate\Support\Facades\Cache::forget($this->getPersistentStateKey());
     }
 
     public $status = 'idle'; // idle, processing
@@ -55,6 +98,13 @@ class NewsProcessor extends Page
 
     public function startProcessing()
     {
+        \Illuminate\Support\Facades\Log::info('NewsProcessor: Start processing requested');
+
+        if (empty($this->categories)) {
+            \Illuminate\Support\Facades\Log::info('NewsProcessor: Categories empty, reloading');
+            $this->mount();
+        }
+
         $this->isProcessing = true;
         $this->status = 'starting';
         $this->currentCategoryIndex = 0;
@@ -72,6 +122,7 @@ class NewsProcessor extends Page
             $this->isProcessing = false;
             $this->status = 'idle';
             $this->log('All categories processed.', 'success');
+            $this->clearState();
 
             return;
         }
@@ -114,22 +165,31 @@ class NewsProcessor extends Page
         $basePath = base_path();
         $scriptPath = $basePath.'/decoder.js';
 
-        $nodePath = trim(exec('which node')) ?: 'node';
-        if (empty($nodePath) || ! is_executable($nodePath)) {
-            $nodePath = '/usr/local/bin/node';
-            if (! file_exists($nodePath)) {
-                $nodePath = 'node';
-            }
+        // Use 'node' directly if available in PATH, otherwise try full path
+        $nodePath = 'node';
+        $testNode = exec('node -v 2>&1');
+        if (str_contains($testNode, 'command not found')) {
+            $nodePath = trim(exec('which node')) ?: 'node';
         }
 
-        $nodeCommand = "$nodePath ".escapeshellarg($scriptPath).' '.escapeshellarg($rssUrl).' --exclude '.escapeshellarg($this->excludeFilePath);
+        $nodeCommand = escapeshellarg($nodePath).' '.escapeshellarg($scriptPath).' '.escapeshellarg($rssUrl).' --exclude '.escapeshellarg($this->excludeFilePath);
 
-        // Run in background
-        $command = "nohup $nodeCommand > ".escapeshellarg($this->logFilePath).' 2>&1 & echo $!';
+        $fullCommand = "{$nodeCommand} > ".escapeshellarg($this->logFilePath).' 2>&1';
+        $command = 'nohup sh -c '.escapeshellarg($fullCommand).' > /dev/null 2>&1 & echo $!';
 
-        $pid = exec($command);
+        \Illuminate\Support\Facades\Log::info('NewsProcessor: Executing command', ['command' => $command]);
+
+        $output = [];
+        $resultCode = 0;
+        $pid = exec($command, $output, $resultCode);
         $this->pid = (int) $pid;
+        \Illuminate\Support\Facades\Log::info('NewsProcessor: Process started', [
+            'pid' => $this->pid,
+            'output' => $output,
+            'resultCode' => $resultCode,
+        ]);
         $this->status = 'processing';
+        $this->saveState();
     }
 
     public function checkProgress()
@@ -179,6 +239,7 @@ class NewsProcessor extends Page
                     }
                 }
             }
+            $this->saveState();
         }
 
         // Check if process is still running
@@ -203,13 +264,16 @@ class NewsProcessor extends Page
         if (! $pid) {
             return false;
         }
-        $result = exec("ps -p $pid -o pid=");
 
-        return trim($result) == $pid;
+        // Use kill -0 to check if process exists
+        $result = shell_exec("kill -0 $pid 2>&1");
+
+        return $result === null || $result === '';
     }
 
     protected function log($message, $type = 'info')
     {
+        \Illuminate\Support\Facades\Log::info("NewsProcessor LOG [{$type}]: {$message}");
         $color = match ($type) {
             'success' => 'text-green-500',
             'error' => 'text-red-500',
@@ -222,6 +286,9 @@ class NewsProcessor extends Page
 
         // Append log using stream() (replace = false)
         $html = "<div class='{$color} font-mono text-sm'>[{$timestamp}] {$message}</div>";
+
+        $this->logs[] = $html;
+        $this->saveState();
 
         if (method_exists($this, 'stream')) {
             try {

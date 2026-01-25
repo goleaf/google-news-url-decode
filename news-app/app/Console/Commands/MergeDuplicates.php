@@ -27,7 +27,7 @@ class MergeDuplicates extends Command
             return;
         }
 
-        $this->info('Found '.$duplicates->count().' URLs with duplicates. Merging...');
+        $this->info('Found ' . $duplicates->count() . ' URLs with duplicates. Merging...');
 
         foreach ($duplicates as $url) {
             $records = Article::where('original_url', $url)
@@ -61,13 +61,27 @@ class MergeDuplicates extends Command
                     $masterCategoryIds[] = $catId;
                 }
 
-                // 3. Move children
-                Article::where('parent_id', $duplicate->id)
-                    ->update(['parent_id' => $master->id]);
+                // 3. Move relations
+                $relatedIds = DB::table('article_related')->where('parent_id', $duplicate->id)->pluck('related_id');
+                foreach ($relatedIds as $relId) {
+                    DB::table('article_related')->insertOrIgnore(['parent_id' => $master->id, 'related_id' => $relId, 'created_at' => now(), 'updated_at' => now()]);
+                }
+                DB::table('article_related')->where('parent_id', $duplicate->id)->delete();
+
+                $parentIds = DB::table('article_related')->where('related_id', $duplicate->id)->pluck('parent_id');
+                foreach ($parentIds as $parentId) {
+                    DB::table('article_related')->insertOrIgnore(['parent_id' => $parentId, 'related_id' => $master->id, 'created_at' => now(), 'updated_at' => now()]);
+                }
+                DB::table('article_related')->where('related_id', $duplicate->id)->delete();
+
+                // 3. Move sources
+                $sourceIds = DB::table('article_source')->where('article_id', $duplicate->id)->pluck('source_id');
+                foreach ($sourceIds as $sId) {
+                    DB::table('article_source')->insertOrIgnore(['article_id' => $master->id, 'source_id' => $sId, 'created_at' => now(), 'updated_at' => now()]);
+                }
+                DB::table('article_source')->where('article_id', $duplicate->id)->delete();
 
                 // 4. Delete the duplicate article record
-                // (article_category records should be deleted by cascading if set,
-                // but let's do it manually if not sure)
                 DB::table('article_category')->where('article_id', $duplicate->id)->delete();
                 $duplicate->delete();
 

@@ -10,6 +10,12 @@ class ListCategories extends ListRecords
 {
     protected static string $resource = CategoryResource::class;
 
+    public function mount(): void
+    {
+        \App\Models\Category::syncFromConfig();
+        parent::mount();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
