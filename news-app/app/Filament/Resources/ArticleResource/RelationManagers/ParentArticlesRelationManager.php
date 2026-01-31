@@ -4,7 +4,6 @@ namespace App\Filament\Resources\ArticleResource\RelationManagers;
 
 use App\Filament\Resources\ArticleResource;
 use App\Models\Article;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -38,7 +37,7 @@ class ParentArticlesRelationManager extends RelationManager
                     ->weight('bold')
                     ->icon('heroicon-m-rectangle-stack')
                     ->iconColor('amber')
-                    ->url(fn(Article $record): string => ArticleResource::getUrl('edit', ['record' => $record]))
+                    ->url(fn (Article $record): string => ArticleResource::getUrl('edit', ['record' => $record]))
                     ->wrap(),
 
                 Tables\Columns\TextColumn::make('source_name')

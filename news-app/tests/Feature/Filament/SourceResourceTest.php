@@ -21,13 +21,13 @@ class SourceResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_list_page()
+    public function it_can_render_list_page(): void
     {
         $this->get(SourceResource::getUrl('index'))->assertSuccessful();
     }
 
     #[Test]
-    public function it_can_list_sources()
+    public function it_can_list_sources(): void
     {
         $sources = Source::factory()->count(5)->create();
 
@@ -36,7 +36,7 @@ class SourceResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_create_source()
+    public function it_can_create_source(): void
     {
         Livewire::test(SourceResource\Pages\CreateSource::class)
             ->set('data.name', 'New Source')
@@ -51,7 +51,7 @@ class SourceResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_edit_source()
+    public function it_can_edit_source(): void
     {
         $source = Source::factory()->create();
         $newName = 'Updated Source Name';

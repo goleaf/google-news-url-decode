@@ -61,8 +61,8 @@ class RelatedArticlesRelationManager extends RelationManager
                     ->weight('bold')
                     ->icon('heroicon-m-document-text')
                     ->iconColor('sky')
-                    ->tooltip(fn($record) => $record->title)
-                    ->url(fn(\App\Models\Article $record): string => \App\Filament\Resources\ArticleResource::getUrl('edit', ['record' => $record]))
+                    ->tooltip(fn ($record) => $record->title)
+                    ->url(fn (\App\Models\Article $record): string => \App\Filament\Resources\ArticleResource::getUrl('edit', ['record' => $record]))
                     ->wrap(),
 
                 Tables\Columns\TextColumn::make('categories.name')
@@ -77,7 +77,7 @@ class RelatedArticlesRelationManager extends RelationManager
                     ->badge()
                     ->color('indigo')
                     ->icon('heroicon-m-globe-alt')
-                    ->url(fn($record) => $record->source_url)
+                    ->url(fn ($record) => $record->source_url)
                     ->openUrlInNewTab()
                     ->toggleable(),
 
@@ -87,9 +87,9 @@ class RelatedArticlesRelationManager extends RelationManager
                     ->iconColor('indigo')
                     ->color('indigo')
                     ->copyable()
-                    ->url(fn($record) => $record->decoded_url)
+                    ->url(fn ($record) => $record->decoded_url)
                     ->openUrlInNewTab()
-                    ->formatStateUsing(fn() => 'Open')
+                    ->formatStateUsing(fn (): string => 'Open')
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('published_at')

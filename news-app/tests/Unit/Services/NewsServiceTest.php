@@ -22,7 +22,7 @@ class NewsServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_extract_domain_from_url()
+    public function it_can_extract_domain_from_url(): void
     {
         $this->assertEquals('example.com', $this->service->extractDomain('https://example.com/path/to/page'));
         $this->assertEquals('news.google.com', $this->service->extractDomain('http://news.google.com/index.html'));
@@ -30,7 +30,7 @@ class NewsServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_save_a_single_article()
+    public function it_can_save_a_single_article(): void
     {
         $category = Category::factory()->create();
         $data = [
@@ -42,7 +42,7 @@ class NewsServiceTest extends TestCase
             'guid' => 'unique-guid-123',
         ];
 
-        $article = $this->service->saveArticle($category->id, $data);
+        $article = $this->service->saveArticle([$category->id], $data);
 
         $this->assertInstanceOf(Article::class, $article);
         $this->assertEquals($data['title'], $article->title);
@@ -51,7 +51,7 @@ class NewsServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_save_an_article_cluster()
+    public function it_can_save_an_article_cluster(): void
     {
         $category = Category::factory()->create();
         $packet = [
@@ -73,12 +73,14 @@ class NewsServiceTest extends TestCase
             ],
         ];
 
-        $saved = $this->service->saveArticleCluster($category->id, $packet);
+        $saved = $this->service->saveArticleCluster([$category->id], $packet);
 
         $this->assertCount(2, $saved);
         $this->assertEquals('Main Article', $saved[0]->title);
         $this->assertEquals('Related 1', $saved[1]->title);
-        $this->assertEquals($saved[0]->id, $saved[1]->parent_id);
+        // Check pivot relationship instead of parent_id column
+        $this->assertTrue($saved[0]->relatedArticles->contains($saved[1]));
+        $this->assertTrue($saved[1]->parentArticles->contains($saved[0]));
         $this->assertEquals('source.com', $saved[0]->source_domain);
         $this->assertEquals('other.com', $saved[1]->source_domain);
     }

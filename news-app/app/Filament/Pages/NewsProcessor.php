@@ -34,14 +34,14 @@ class NewsProcessor extends Page
 
     public $savedCount = 0;
 
-    public function mount()
+    public function mount(): void
     {
         Category::syncFromConfig();
 
         $this->categories = Category::whereNotNull('rss_url')
             ->where('rss_url', '!=', '')
             ->get()
-            ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'rss_url' => $c->rss_url])
+            ->map(fn ($c): array => ['id' => $c->id, 'name' => $c->name, 'rss_url' => $c->rss_url])
             ->toArray();
 
         // Check for existing state
@@ -60,7 +60,7 @@ class NewsProcessor extends Page
         }
     }
 
-    protected function getPersistentStateKey()
+    protected function getPersistentStateKey(): string
     {
         return 'news_processor_state';
     }
@@ -88,15 +88,15 @@ class NewsProcessor extends Page
 
     public $status = 'idle'; // idle, processing
 
-    public $pid = null;
+    public $pid;
 
-    public $logFilePath = null;
+    public $logFilePath;
 
-    public $excludeFilePath = null;
+    public $excludeFilePath;
 
     public $logOffset = 0;
 
-    public function startProcessing()
+    public function startProcessing(): void
     {
         \Illuminate\Support\Facades\Log::info('NewsProcessor: Start processing requested');
 
@@ -116,7 +116,7 @@ class NewsProcessor extends Page
         $this->processNextCategory();
     }
 
-    public function processNextCategory()
+    public function processNextCategory(): void
     {
         if ($this->currentCategoryIndex >= count($this->categories)) {
             $this->isProcessing = false;
@@ -172,7 +172,7 @@ class NewsProcessor extends Page
             $nodePath = trim(exec('which node')) ?: 'node';
         }
 
-        $nodeCommand = escapeshellarg($nodePath).' '.escapeshellarg($scriptPath).' '.escapeshellarg($rssUrl).' --exclude '.escapeshellarg($this->excludeFilePath);
+        $nodeCommand = escapeshellarg($nodePath).' '.escapeshellarg($scriptPath).' '.escapeshellarg((string) $rssUrl).' --exclude '.escapeshellarg($this->excludeFilePath);
 
         $fullCommand = "{$nodeCommand} > ".escapeshellarg($this->logFilePath).' 2>&1';
         $command = 'nohup sh -c '.escapeshellarg($fullCommand).' > /dev/null 2>&1 & echo $!';
@@ -192,7 +192,7 @@ class NewsProcessor extends Page
         $this->saveState();
     }
 
-    public function checkProgress()
+    public function checkProgress(): void
     {
         if ($this->status !== 'processing' || ! $this->logFilePath) {
             return;
@@ -228,15 +228,13 @@ class NewsProcessor extends Page
                         foreach ($saved as $article) {
                             if ($article->wasRecentlyCreated) {
                                 $this->savedCount++;
-                                $this->log('Saved: '.mb_substr($article->title, 0, 50).'...', 'success');
+                                $this->log('Saved: '.mb_substr((string) $article->title, 0, 50).'...', 'success');
                             }
                         }
                     }
-                } else {
+                } elseif (trim($line) !== '' && trim($line) !== '0') {
                     // Raw log (stderr or debug)
-                    if (trim($line)) {
-                        $this->log($line, 'gray');
-                    }
+                    $this->log($line, 'gray');
                 }
             }
             $this->saveState();
@@ -293,7 +291,7 @@ class NewsProcessor extends Page
         if (method_exists($this, 'stream')) {
             try {
                 $this->stream('logs', $html, false);
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 // Ignore if streaming is not available
             }
         }

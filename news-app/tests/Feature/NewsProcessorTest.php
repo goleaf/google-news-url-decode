@@ -15,30 +15,28 @@ class NewsProcessorTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_can_render_news_processor_page()
+    public function it_can_render_news_processor_page(): void
     {
         Livewire::test(NewsProcessor::class)
             ->assertSuccessful();
     }
 
     #[Test]
-    public function it_loads_categories_with_rss_on_mount()
+    public function it_loads_categories_with_rss_on_mount(): void
     {
         // On mount, config categories are synced to DB.
         $configCategoriesCount = count(config('news.categories', []));
 
         Livewire::test(NewsProcessor::class)
-            ->assertSet('categories', function ($categories) use ($configCategoriesCount) {
-                return count($categories) === $configCategoriesCount;
-            });
+            ->assertSet('categories', fn ($categories): bool => count($categories) === $configCategoriesCount);
     }
 
     #[Test]
-    public function it_can_clean_and_save_articles()
+    public function it_can_clean_and_save_articles(): void
     {
         $category = Category::factory()->create(['rss_url' => 'https://example.com/rss']);
 
-        $component = Livewire::test(NewsProcessor::class);
+        Livewire::test(NewsProcessor::class);
 
         // We use a helper method to test the protected logic if we can't easily trigger it.
         // But let's try to use the component's internal state.
@@ -64,8 +62,9 @@ class NewsProcessorTest extends TestCase
         ];
 
         // Since savePacket was moved to NewsService, we test the service directly
+        // Note: saveArticleCluster now expects an array of category IDs
         $service = new \App\Services\NewsService;
-        $service->saveArticleCluster($category->id, $packet);
+        $service->saveArticleCluster([$category->id], $packet);
 
         $this->assertDatabaseHas('articles', [
             'title' => 'Test Article Title', // Suffix should be removed by NewsService
@@ -86,6 +85,8 @@ class NewsProcessorTest extends TestCase
         $mainArticle = Article::where('title', 'Test Article Title')->first();
         $relatedArticle = Article::where('title', 'Related Article')->first();
 
-        $this->assertEquals($mainArticle->id, $relatedArticle->parent_id);
+        // Verify relationship via pivot table instead of parent_id column
+        $this->assertTrue($mainArticle->relatedArticles->contains($relatedArticle));
+        $this->assertTrue($relatedArticle->parentArticles->contains($mainArticle));
     }
 }

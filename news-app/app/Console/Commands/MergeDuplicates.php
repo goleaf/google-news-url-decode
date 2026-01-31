@@ -12,7 +12,7 @@ class MergeDuplicates extends Command
 
     protected $description = 'Find and merge articles with duplicate URLs';
 
-    public function handle()
+    public function handle(): void
     {
         $this->info('Scanning for duplicates based on original_url...');
 
@@ -27,7 +27,7 @@ class MergeDuplicates extends Command
             return;
         }
 
-        $this->info('Found ' . $duplicates->count() . ' URLs with duplicates. Merging...');
+        $this->info('Found '.$duplicates->count().' URLs with duplicates. Merging...');
 
         foreach ($duplicates as $url) {
             $records = Article::where('original_url', $url)

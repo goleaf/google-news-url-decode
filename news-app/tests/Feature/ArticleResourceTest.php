@@ -22,14 +22,14 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_list_page()
+    public function it_can_render_list_page(): void
     {
         $this->get(ArticleResource::getUrl('index'))
             ->assertSuccessful();
     }
 
     #[Test]
-    public function it_can_list_articles()
+    public function it_can_list_articles(): void
     {
         $articles = Article::factory()->count(5)->create();
 
@@ -39,7 +39,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_search_articles()
+    public function it_can_search_articles(): void
     {
         $article = Article::factory()->create(['title' => 'Specific Unique Title']);
         $otherArticle = Article::factory()->create(['title' => 'Other Title']);
@@ -52,7 +52,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_filter_articles_by_category()
+    public function it_can_filter_articles_by_category(): void
     {
         $category = Category::factory()->create();
         $article = Article::factory()->create();
@@ -68,7 +68,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_filter_articles_by_decoded_url_presence()
+    public function it_can_filter_articles_by_decoded_url_presence(): void
     {
         $articleWithDecoded = Article::factory()->create(['decoded_url' => 'https://example.com']);
         $articleWithoutDecoded = Article::factory()->create(['decoded_url' => null]);
@@ -81,7 +81,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_filter_articles_by_publication_date()
+    public function it_can_filter_articles_by_publication_date(): void
     {
         $today = now();
         $yesterday = now()->subDay();
@@ -102,14 +102,14 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_create_page()
+    public function it_can_render_create_page(): void
     {
         $this->get(ArticleResource::getUrl('create'))
             ->assertSuccessful();
     }
 
     #[Test]
-    public function it_can_create_article()
+    public function it_can_create_article(): void
     {
         $category = Category::factory()->create();
         $newData = Article::factory()->make();
@@ -129,7 +129,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_edit_page()
+    public function it_can_render_edit_page(): void
     {
         $article = Article::factory()->create();
 
@@ -138,7 +138,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_update_article()
+    public function it_can_update_article(): void
     {
         $article = Article::factory()->create();
         $category = Category::factory()->create();
@@ -159,7 +159,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_delete_article()
+    public function it_can_delete_article(): void
     {
         $article = Article::factory()->create();
 
@@ -172,7 +172,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_bulk_delete_articles()
+    public function it_can_bulk_delete_articles(): void
     {
         $articles = Article::factory()->count(3)->create();
 
@@ -185,12 +185,17 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_list_children_in_relation_manager()
+    public function it_can_list_children_in_relation_manager(): void
     {
         $parent = Article::factory()->create();
-        $children = Article::factory()->count(3)->create(['parent_id' => $parent->id]);
+        $children = Article::factory()->count(3)->create();
 
-        Livewire::test(ArticleResource\RelationManagers\ChildrenRelationManager::class, [
+        // Create relationships via pivot table
+        foreach ($children as $child) {
+            $parent->relatedArticles()->attach($child);
+        }
+
+        Livewire::test(ArticleResource\RelationManagers\RelatedArticlesRelationManager::class, [
             'ownerRecord' => $parent,
             'pageClass' => ArticleResource\Pages\EditArticle::class,
         ])

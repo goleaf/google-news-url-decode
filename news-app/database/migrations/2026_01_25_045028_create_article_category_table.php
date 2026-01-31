@@ -9,7 +9,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('article_category', function (Blueprint $table) {
+        Schema::create('article_category', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('article_id')->constrained()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
@@ -37,13 +37,13 @@ return new class extends Migration
                     $records = [];
                 }
             }
-            if (! empty($records)) {
+            if ($records !== []) {
                 DB::table('article_category')->insertOrIgnore($records);
             }
         }
 
         // Drop old column
-        Schema::table('articles', function (Blueprint $table) {
+        Schema::table('articles', function (Blueprint $table): void {
             $table->dropForeign(['category_id']); // Assuming constraint name follows convention
             $table->dropColumn('category_id');
         });
@@ -51,7 +51,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('articles', function (Blueprint $table) {
+        Schema::table('articles', function (Blueprint $table): void {
             $table->foreignId('category_id')->nullable()->constrained();
         });
 

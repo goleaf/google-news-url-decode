@@ -24,13 +24,13 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_list_page()
+    public function it_can_render_list_page(): void
     {
         $this->get(ArticleResource::getUrl('index'))->assertSuccessful();
     }
 
     #[Test]
-    public function it_can_list_articles()
+    public function it_can_list_articles(): void
     {
         $articles = Article::factory()->count(10)->create();
 
@@ -40,13 +40,13 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_create_page()
+    public function it_can_render_create_page(): void
     {
         $this->get(ArticleResource::getUrl('create'))->assertSuccessful();
     }
 
     #[Test]
-    public function it_can_create_article()
+    public function it_can_create_article(): void
     {
         $categories = Category::factory()->count(2)->create();
         $newData = Article::factory()->make();
@@ -65,7 +65,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_edit_page()
+    public function it_can_render_edit_page(): void
     {
         $article = Article::factory()->create();
 
@@ -73,7 +73,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_edit_article()
+    public function it_can_edit_article(): void
     {
         $article = Article::factory()->create();
         $categories = Category::factory()->count(2)->create();
@@ -94,7 +94,7 @@ class ArticleResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_delete_article()
+    public function it_can_delete_article(): void
     {
         $article = Article::factory()->create();
 

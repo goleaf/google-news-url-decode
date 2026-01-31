@@ -13,17 +13,19 @@ class CategoryModelTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_has_parent_child_relationships()
+    public function it_has_parent_child_relationships(): void
     {
         $parent = Category::factory()->create(['name' => 'Parent']);
-        $child = Category::factory()->create(['name' => 'Child', 'parent_id' => $parent->id]);
+        $child = Category::factory()->create(['name' => 'Child']);
 
-        $this->assertEquals($parent->id, $child->parent->id);
-        $this->assertTrue($parent->children->contains($child));
+        $parent->subCategories()->attach($child);
+
+        $this->assertTrue($parent->subCategories->contains($child));
+        $this->assertTrue($child->parentCategories->contains($parent));
     }
 
     #[Test]
-    public function it_has_article_relationships()
+    public function it_has_article_relationships(): void
     {
         $category = Category::factory()->create();
         $article = Article::factory()->create();

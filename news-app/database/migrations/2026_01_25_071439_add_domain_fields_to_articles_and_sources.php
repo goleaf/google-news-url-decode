@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sources', function (Blueprint $table) {
+        Schema::table('sources', function (Blueprint $table): void {
             $table->string('domain')->nullable()->after('url');
         });
 
-        Schema::table('articles', function (Blueprint $table) {
+        Schema::table('articles', function (Blueprint $table): void {
             $table->string('source_domain')->nullable()->after('source_url');
         });
     }
@@ -25,11 +25,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sources', function (Blueprint $table) {
+        Schema::table('sources', function (Blueprint $table): void {
             $table->dropColumn('domain');
         });
 
-        Schema::table('articles', function (Blueprint $table) {
+        Schema::table('articles', function (Blueprint $table): void {
             $table->dropColumn('source_domain');
         });
     }

@@ -20,6 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::before(fn () => true);
+        Gate::before(fn (): true => true);
     }
 }

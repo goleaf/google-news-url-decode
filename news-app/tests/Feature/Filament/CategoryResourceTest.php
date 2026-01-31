@@ -21,13 +21,13 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_list_page()
+    public function it_can_render_list_page(): void
     {
         $this->get(CategoryResource::getUrl('index'))->assertSuccessful();
     }
 
     #[Test]
-    public function it_can_list_categories()
+    public function it_can_list_categories(): void
     {
         $categories = Category::factory()->count(5)->create();
 
@@ -37,7 +37,7 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_create_category()
+    public function it_can_create_category(): void
     {
         Livewire::test(CategoryResource\Pages\CreateCategory::class)
             ->set('data.name', 'New Category')
@@ -51,7 +51,7 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_edit_category()
+    public function it_can_edit_category(): void
     {
         $category = Category::factory()->create();
         $newName = 'Updated Category Name';

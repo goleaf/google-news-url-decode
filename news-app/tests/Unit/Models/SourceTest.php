@@ -13,17 +13,21 @@ class SourceTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_has_factory()
+    public function it_has_factory(): void
     {
         $source = Source::factory()->create();
         $this->assertInstanceOf(Source::class, $source);
     }
 
     #[Test]
-    public function it_has_many_articles()
+    public function it_has_many_articles(): void
     {
         $source = Source::factory()->create(['name' => 'Test Source']);
-        Article::factory()->count(3)->create(['source_id' => $source->id]);
+        $articles = Article::factory()->count(3)->create();
+
+        foreach ($articles as $article) {
+            $source->articles()->attach($article);
+        }
 
         $this->assertCount(3, $source->articles);
     }

@@ -14,7 +14,7 @@ class ArticleStatsOverviewTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_can_render_widget()
+    public function it_can_render_widget(): void
     {
         Article::factory()->count(10)->create();
         Article::factory()->count(5)->create(['created_at' => today()]);

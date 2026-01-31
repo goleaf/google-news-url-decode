@@ -44,7 +44,7 @@ class ArticlesRelationManager extends RelationManager
                     ->iconColor('sky')
                     ->limit(50)
                     ->tooltip(fn ($record) => $record->title)
-                    ->url(fn ($record) => \App\Filament\Resources\ArticleResource::getUrl('edit', ['record' => $record])),
+                    ->url(fn ($record): string => \App\Filament\Resources\ArticleResource::getUrl('edit', ['record' => $record])),
 
                 Tables\Columns\TextColumn::make('published_at')
                     ->dateTime('M j, H:i')
@@ -60,7 +60,7 @@ class ArticlesRelationManager extends RelationManager
                     ->copyable()
                     ->url(fn ($record) => $record->decoded_url)
                     ->openUrlInNewTab()
-                    ->formatStateUsing(fn () => 'Open'),
+                    ->formatStateUsing(fn (): string => 'Open'),
             ])
             ->filters([
                 //
@@ -72,11 +72,11 @@ class ArticlesRelationManager extends RelationManager
                 Tables\Actions\ViewAction::make()
                     ->iconButton()
                     ->color('info')
-                    ->url(fn ($record) => \App\Filament\Resources\ArticleResource::getUrl('view', ['record' => $record])),
+                    ->url(fn ($record): string => \App\Filament\Resources\ArticleResource::getUrl('view', ['record' => $record])),
                 Tables\Actions\EditAction::make()
                     ->iconButton()
                     ->color('warning')
-                    ->url(fn ($record) => \App\Filament\Resources\ArticleResource::getUrl('edit', ['record' => $record])),
+                    ->url(fn ($record): string => \App\Filament\Resources\ArticleResource::getUrl('edit', ['record' => $record])),
                 Tables\Actions\DeleteAction::make()
                     ->iconButton()
                     ->color('danger'),

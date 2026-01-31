@@ -22,7 +22,6 @@ class CategoryFactory extends Factory
         return [
             'name' => $this->faker->unique()->word(),
             'rss_url' => $this->faker->optional()->url(),
-            'parent_id' => null,
         ];
     }
 }

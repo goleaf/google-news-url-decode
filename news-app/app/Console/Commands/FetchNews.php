@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Process;
 
 class FetchNews extends Command
 {
-    protected $signature = 'news:fetch';
+    protected $signature = 'news:fetch {--depth=1 : Recursive search depth}';
 
-    protected $description = 'Fetch and decode news from Categories';
+    protected $description = 'Fetch and decode news from Categories with recursive search';
 
-    public function handle()
+    public function handle(): void
     {
         $categories = Category::whereNotNull('rss_url')->get();
 
@@ -34,13 +34,13 @@ class FetchNews extends Command
 
             $this->info('Scanning RSS against '.count($set).' globally known items.');
 
-            $command = 'node decoder.js '.escapeshellarg($category->rss_url).' --exclude '.escapeshellarg($excludeFile);
+            $command = 'node decoder.js '.escapeshellarg((string) $category->rss_url).' --exclude '.escapeshellarg($excludeFile);
             $buffer = '';
 
             // Increase timeout as resolving multiple links takes time
             Process::path(base_path())
                 ->timeout(1800) // 30 mins
-                ->run($command, function (string $type, string $output) use (&$buffer, $category) {
+                ->run($command, function (string $type, string $output) use (&$buffer, $category): void {
                     $buffer .= $output;
 
                     while (($pos = strpos($buffer, "\n")) !== false) {
@@ -61,11 +61,8 @@ class FetchNews extends Command
 
                             if (isset($data['main'])) {
                                 $service = new \App\Services\NewsService;
-                                $saved = $service->saveArticleCluster($category->id, $data);
-
-                                if (! empty($saved)) {
-                                    $this->line('Saved Cluster: '.mb_substr($data['main']['title'], 0, 50).'... ('.count($saved).' articles)');
-                                }
+                                $depth = (int) $this->option('depth');
+                                $service->saveArticleCluster([$category->id], $data, $depth, 0, $this->output);
                             }
                         }
                     }

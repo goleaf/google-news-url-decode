@@ -18,14 +18,14 @@ class ArticlePolicyTest extends TestCase
     }
 
     #[Test]
-    public function a_user_can_view_any_articles()
+    public function a_user_can_view_any_articles(): void
     {
         $user = User::factory()->create();
         $this->assertTrue($user->can('viewAny', Article::class));
     }
 
     #[Test]
-    public function a_user_can_view_an_article()
+    public function a_user_can_view_an_article(): void
     {
         $user = User::factory()->create();
         $article = Article::factory()->create();
@@ -33,14 +33,14 @@ class ArticlePolicyTest extends TestCase
     }
 
     #[Test]
-    public function a_user_can_create_an_article()
+    public function a_user_can_create_an_article(): void
     {
         $user = User::factory()->create();
         $this->assertTrue($user->can('create', Article::class));
     }
 
     #[Test]
-    public function a_user_can_update_an_article()
+    public function a_user_can_update_an_article(): void
     {
         $user = User::factory()->create();
         $article = Article::factory()->create();
@@ -48,7 +48,7 @@ class ArticlePolicyTest extends TestCase
     }
 
     #[Test]
-    public function a_user_can_delete_an_article()
+    public function a_user_can_delete_an_article(): void
     {
         $user = User::factory()->create();
         $article = Article::factory()->create();

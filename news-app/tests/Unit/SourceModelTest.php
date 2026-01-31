@@ -13,15 +13,16 @@ class SourceModelTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_has_article_relationships()
+    public function it_has_article_relationships(): void
     {
         $source = Source::factory()->create(['name' => 'Test Source']);
         $article = Article::factory()->create([
-            'source_id' => $source->id,
             'source_name' => 'Test Source',
         ]);
 
+        $source->articles()->attach($article);
+
         $this->assertTrue($source->fresh()->articles->contains($article));
-        $this->assertEquals($source->id, $article->source->id);
+        $this->assertTrue($article->fresh()->sources->contains($source));
     }
 }

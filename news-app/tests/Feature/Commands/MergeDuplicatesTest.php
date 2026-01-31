@@ -13,10 +13,10 @@ class MergeDuplicatesTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_can_merge_duplicate_articles()
+    public function it_can_merge_duplicate_articles(): void
     {
         // Drop unique constraint temporarily to allow inserting duplicates for testing the command
-        \Illuminate\Support\Facades\Schema::table('articles', function (\Illuminate\Database\Schema\Blueprint $table) {
+        \Illuminate\Support\Facades\Schema::table('articles', function (\Illuminate\Database\Schema\Blueprint $table): void {
             $table->dropUnique(['original_url']);
         });
 
@@ -32,9 +32,11 @@ class MergeDuplicatesTest extends TestCase
         $duplicate->categories()->attach($category2);
 
         $childOfDuplicate = Article::factory()->create([
-            'parent_id' => $duplicate->id,
             'original_url' => 'http://example.com/child',
         ]);
+
+        // Link child to duplicate via pivot table
+        $duplicate->relatedArticles()->attach($childOfDuplicate);
 
         $this->artisan('news:merge-duplicates')
             ->expectsOutput('Scanning for duplicates based on original_url...')
@@ -50,12 +52,13 @@ class MergeDuplicatesTest extends TestCase
         $this->assertTrue($remaining->categories->contains($category1));
         $this->assertTrue($remaining->categories->contains($category2));
 
-        // Check child was moved
-        $this->assertEquals($remaining->id, $childOfDuplicate->fresh()->parent_id);
+        // Check child relationship was moved via pivot table
+        $childOfDuplicate->refresh();
+        $this->assertTrue($remaining->relatedArticles->contains($childOfDuplicate));
     }
 
     #[Test]
-    public function it_outputs_no_duplicates_when_none_found()
+    public function it_outputs_no_duplicates_when_none_found(): void
     {
         $this->artisan('news:merge-duplicates')
             ->expectsOutput('No duplicates found.')

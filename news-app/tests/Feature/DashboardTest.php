@@ -14,13 +14,13 @@ class DashboardTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_can_render_dashboard()
+    public function it_can_render_dashboard(): void
     {
         $this->get('/')->assertStatus(200);
     }
 
     #[Test]
-    public function it_displays_article_stats_on_dashboard()
+    public function it_displays_article_stats_on_dashboard(): void
     {
         \Illuminate\Support\Facades\Cache::forget('article_stats');
         $this->actingAs(\App\Models\User::factory()->create());

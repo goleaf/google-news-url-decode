@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('articles', function (Blueprint $table) {
+        Schema::table('articles', function (Blueprint $table): void {
             // Change to string to allow indexing (SQLite handles long strings in unique index fine)
             $table->string('original_url', 1024)->change();
             $table->string('guid', 1024)->nullable()->change();
@@ -26,7 +26,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('articles', function (Blueprint $table) {
+        Schema::table('articles', function (Blueprint $table): void {
             $table->dropUnique(['original_url']);
             $table->text('original_url')->change();
             $table->text('guid')->nullable()->change();

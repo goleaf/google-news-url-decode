@@ -14,9 +14,9 @@ class MergeDuplicatesTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_merges_articles_with_duplicate_urls()
+    public function it_merges_articles_with_duplicate_urls(): void
     {
-        \Illuminate\Support\Facades\Schema::table('articles', function (\Illuminate\Database\Schema\Blueprint $table) {
+        \Illuminate\Support\Facades\Schema::table('articles', function (\Illuminate\Database\Schema\Blueprint $table): void {
             $table->dropUnique(['original_url']);
         });
 
@@ -40,9 +40,11 @@ class MergeDuplicatesTest extends TestCase
         $duplicate->categories()->attach($category2);
 
         $child = Article::factory()->create([
-            'parent_id' => $duplicate->id,
             'original_url' => 'https://news.google.com/articles/child',
         ]);
+
+        // Create relationship via pivot table
+        $duplicate->relatedArticles()->attach($child);
 
         $this->assertEquals(2, Article::where('original_url', $url)->count());
 
@@ -56,8 +58,7 @@ class MergeDuplicatesTest extends TestCase
         $this->assertTrue($remaining->categories->contains($category1));
         $this->assertTrue($remaining->categories->contains($category2));
 
-        // Verify children moved
-        $child->refresh();
-        $this->assertEquals($remaining->id, $child->parent_id);
+        // Verify children moved via pivot
+        $this->assertTrue($remaining->relatedArticles->contains($child));
     }
 }

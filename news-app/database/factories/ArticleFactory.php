@@ -25,10 +25,8 @@ class ArticleFactory extends Factory
             'decoded_url' => $this->faker->url(),
             'source_name' => $this->faker->company(),
             'source_url' => $this->faker->url(),
-            'source_id' => null,
             'guid' => $this->faker->unique()->uuid(),
             'published_at' => $this->faker->dateTimeBetween('-1 month', 'now'),
-            'parent_id' => null,
         ];
     }
 }

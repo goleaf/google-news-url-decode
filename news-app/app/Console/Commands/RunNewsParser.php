@@ -4,24 +4,23 @@ namespace App\Console\Commands;
 
 use App\Models\Article;
 use App\Models\Category;
-use App\Models\Source;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 class RunNewsParser extends Command
 {
-    protected $signature = 'news:parse {--category-id= : Process only a specific category}';
+    protected $signature = 'news:parse {--category-id= : Process only a specific category} {--depth=1 : Recursive search depth}';
 
-    protected $description = 'Rerun the news parser for categories';
+    protected $description = 'Rerun the news parser for categories with recursive search';
 
-    public function handle()
+    public function handle(): void
     {
         $categoryId = $this->option('category-id');
 
         $categories = Category::whereNotNull('rss_url')
             ->where('rss_url', '!=', '')
-            ->when($categoryId, fn($q) => $q->where('id', $categoryId))
+            ->when($categoryId, fn ($q) => $q->where('id', $categoryId))
             ->get();
 
         if ($categories->isEmpty()) {
@@ -30,7 +29,7 @@ class RunNewsParser extends Command
             return;
         }
 
-        $this->info('Starting news parser for ' . $categories->count() . ' categories...');
+        $this->info('Starting news parser for '.$categories->count().' categories...');
 
         foreach ($categories as $category) {
             $this->info("Processing Category: {$category->name}...");
@@ -52,27 +51,28 @@ class RunNewsParser extends Command
             $scriptPath = base_path('decoder.js');
             $nodePath = trim(exec('which node')) ?: 'node';
 
-            $command = escapeshellarg($nodePath) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($rssUrl) . ' --exclude ' . escapeshellarg($excludeFilePath);
+            $command = escapeshellarg($nodePath).' '.escapeshellarg($scriptPath).' '.escapeshellarg((string) $rssUrl).' --exclude '.escapeshellarg($excludeFilePath);
 
             $this->info("Executing: $command");
 
             $handle = popen($command, 'r');
 
-            while (!feof($handle)) {
+            while (! feof($handle)) {
                 $line = fgets($handle);
-                if (empty(trim($line))) {
+                if (in_array(trim($line), ['', '0'], true)) {
                     continue;
                 }
 
                 $data = json_decode($line, true);
                 if ($data) {
                     if (isset($data['event']) && $data['event'] === 'status') {
-                        $this->line('<info>[Status]</info> ' . $data['message']);
+                        $this->line('<info>[Status]</info> '.$data['message']);
                     } elseif (isset($data['main'])) {
-                        $this->savePacket($category->id, $data);
+                        $depth = (int) $this->option('depth');
+                        $this->savePacket([$category->id], $data, $depth, $this->output);
                     }
                 } else {
-                    $this->line('<comment>[Log]</comment> ' . trim($line));
+                    $this->line('<comment>[Log]</comment> '.trim($line));
                 }
             }
 
@@ -89,12 +89,11 @@ class RunNewsParser extends Command
         $this->call('news:merge-duplicates');
     }
 
-    protected function savePacket($categoryId, $packet)
+    protected function savePacket(array $categoryIds, array $packet, int $depth = 1, $output = null)
     {
         $service = app(\App\Services\NewsService::class);
-        $service->saveArticleCluster($categoryId, $packet);
+        $service->saveArticleCluster($categoryIds, $packet, $depth, 0, $output);
     }
-
 
     protected function cleanUrl($url)
     {
@@ -102,20 +101,20 @@ class RunNewsParser extends Command
             return null;
         }
 
-        $urlData = parse_url($url);
-        if (!isset($urlData['host'])) {
+        $urlData = parse_url((string) $url);
+        if (! isset($urlData['host'])) {
             return $url;
         }
 
         $path = $urlData['path'] ?? '';
-        $cleanUrl = ($urlData['scheme'] ?? 'https') . '://' . $urlData['host'] . $path;
+        $cleanUrl = ($urlData['scheme'] ?? 'https').'://'.$urlData['host'].$path;
 
         if (isset($urlData['query'])) {
             parse_str($urlData['query'], $params);
             $keep = ['v', 'id', 'p'];
             $filteredParams = array_intersect_key($params, array_flip($keep));
-            if (!empty($filteredParams)) {
-                $cleanUrl .= '?' . http_build_query($filteredParams);
+            if ($filteredParams !== []) {
+                $cleanUrl .= '?'.http_build_query($filteredParams);
             }
         }
 
@@ -137,23 +136,17 @@ class RunNewsParser extends Command
         }
 
         // If the "decoded" URL still contains Google News patterns, it's a failure
-        if (
-            Str::contains($decoded, [
-                'news.google.com/rss/articles',
-                'news.google.com/articles',
-                'consent.google.com',
-            ])
-        ) {
-            return false;
-        }
-
-        return true;
+        return ! Str::contains($decoded, [
+            'news.google.com/rss/articles',
+            'news.google.com/articles',
+            'consent.google.com',
+        ]);
     }
 
-    protected function extractDomain($url)
+    protected function extractDomain($url): ?string
     {
-        $host = parse_url($url, PHP_URL_HOST);
-        if (!$host) {
+        $host = parse_url((string) $url, PHP_URL_HOST);
+        if (! $host) {
             return null;
         }
 

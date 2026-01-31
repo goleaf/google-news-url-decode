@@ -14,7 +14,7 @@ class CleanArticlesAndPopulateSourcesTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_cleans_titles_and_populates_sources()
+    public function it_cleans_titles_and_populates_sources(): void
     {
         $sourceName = 'Example News';
         $sourceUrl = 'https://example.com/news';
@@ -41,14 +41,16 @@ class CleanArticlesAndPopulateSourcesTest extends TestCase
     }
 
     #[Test]
-    public function it_inherits_guid_from_parent()
+    public function it_inherits_guid_from_parent(): void
     {
         $parent = Article::factory()->create(['guid' => 'parent-guid']);
         $child = Article::factory()->create([
-            'parent_id' => $parent->id,
             'guid' => null,
             'source_name' => 'Some Source', // Trigger update logic
         ]);
+
+        // Create parent-child relationship via pivot table
+        $parent->relatedArticles()->attach($child);
 
         Artisan::call('news:clean-and-populate');
 

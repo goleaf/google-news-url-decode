@@ -13,7 +13,7 @@ class CleanArticlesAndPopulateSources extends Command
 
     protected $description = 'Clean article titles by removing source names and populate sources table';
 
-    public function handle()
+    public function handle(): void
     {
         $articles = Article::all();
         $this->info("Processing {$articles->count()} articles...");
@@ -24,7 +24,7 @@ class CleanArticlesAndPopulateSources extends Command
         foreach ($articles as $article) {
             // 1. Handle Source
             if ($article->source_name) {
-                $domain = !empty($article->source_url) ? $this->extractDomain($article->source_url) : null;
+                $domain = empty($article->source_url) ? null : $this->extractDomain($article->source_url);
                 \Illuminate\Support\Facades\Log::info("Cleaning article {$article->id}: URL={$article->source_url}, Domain={$domain}");
 
                 $source = Source::updateOrCreate(
@@ -37,7 +37,7 @@ class CleanArticlesAndPopulateSources extends Command
 
                 // 2. Clean Title
                 // Google News titles are usually "Title - Source Name"
-                $sourceSuffix = ' - ' . $article->source_name;
+                $sourceSuffix = ' - '.$article->source_name;
                 $updateData = [];
 
                 if (Str::endsWith($article->title, $sourceSuffix)) {
@@ -51,12 +51,12 @@ class CleanArticlesAndPopulateSources extends Command
                 // 3. Inherit parent GUID if empty and has parents
                 if (empty($article->guid) && $article->parentArticles()->exists()) {
                     $parent = $article->parentArticles()->first();
-                    if ($parent && !empty($parent->guid)) {
+                    if ($parent && ! empty($parent->guid)) {
                         $updateData['guid'] = $parent->guid;
                     }
                 }
 
-                if (!empty($updateData)) {
+                if (! empty($updateData)) {
                     $article->update($updateData);
                 }
 
@@ -68,13 +68,13 @@ class CleanArticlesAndPopulateSources extends Command
 
         $bar->finish();
         $this->newline();
-        $this->info('Done! Created ' . Source::count() . ' sources.');
+        $this->info('Done! Created '.Source::count().' sources.');
     }
 
-    protected function extractDomain($url)
+    protected function extractDomain($url): ?string
     {
-        $host = parse_url($url, PHP_URL_HOST);
-        if (!$host) {
+        $host = parse_url((string) $url, PHP_URL_HOST);
+        if (! $host) {
             return null;
         }
 

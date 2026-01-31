@@ -13,7 +13,7 @@ class ResolvePendingArticles extends Command
 
     protected $description = 'Try to resolve all articles that are missing a decoded URL';
 
-    public function handle()
+    public function handle(): void
     {
         $pending = Article::whereNull('decoded_url')->get();
 
@@ -25,7 +25,7 @@ class ResolvePendingArticles extends Command
 
         $this->info("Found {$pending->count()} articles to resolve...");
 
-        $inputData = $pending->map(fn ($a) => [
+        $inputData = $pending->map(fn ($a): array => [
             'id' => $a->id,
             'url' => $a->original_url,
         ])->values()->toArray();
@@ -44,7 +44,7 @@ class ResolvePendingArticles extends Command
 
         while (! feof($handle)) {
             $line = fgets($handle);
-            if (empty(trim($line))) {
+            if (in_array(trim($line), ['', '0'], true)) {
                 continue;
             }
 
@@ -72,7 +72,7 @@ class ResolvePendingArticles extends Command
         if (empty($url)) {
             return null;
         }
-        $urlData = parse_url($url);
+        $urlData = parse_url((string) $url);
         if (! isset($urlData['host'])) {
             return $url;
         }
@@ -82,7 +82,7 @@ class ResolvePendingArticles extends Command
             parse_str($urlData['query'], $params);
             $keep = ['v', 'id', 'p'];
             $filteredParams = array_intersect_key($params, array_flip($keep));
-            if (! empty($filteredParams)) {
+            if ($filteredParams !== []) {
                 $cleanUrl .= '?'.http_build_query($filteredParams);
             }
         }
@@ -98,10 +98,7 @@ class ResolvePendingArticles extends Command
         if ($original === $decoded) {
             return false;
         }
-        if (Str::contains($decoded, ['news.google.com/rss/articles', 'news.google.com/articles', 'consent.google.com'])) {
-            return false;
-        }
 
-        return true;
+        return ! Str::contains($decoded, ['news.google.com/rss/articles', 'news.google.com/articles', 'consent.google.com']);
     }
 }

@@ -13,24 +13,26 @@ class CategoryTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_has_factory()
+    public function it_has_factory(): void
     {
         $category = Category::factory()->create();
         $this->assertInstanceOf(Category::class, $category);
     }
 
     #[Test]
-    public function it_can_have_a_parent_and_children()
+    public function it_can_have_parent_and_subcategories(): void
     {
         $parent = Category::factory()->create();
-        $child = Category::factory()->create(['parent_id' => $parent->id]);
+        $child = Category::factory()->create();
 
-        $this->assertTrue($parent->children->contains($child));
-        $this->assertEquals($parent->id, $child->parent->id);
+        $parent->subCategories()->attach($child);
+
+        $this->assertTrue($parent->subCategories->contains($child));
+        $this->assertTrue($child->parentCategories->contains($parent));
     }
 
     #[Test]
-    public function it_belongs_to_many_articles()
+    public function it_belongs_to_many_articles(): void
     {
         $category = Category::factory()->create();
         $articles = Article::factory()->count(2)->create();

@@ -129,13 +129,15 @@ When user's prompt is NOT in English:
 
 ### 📱 Project Type Routing
 
-| Project Type                           | Primary Agent         | Skills                        |
-| -------------------------------------- | --------------------- | ----------------------------- |
-| **MOBILE** (iOS, Android, RN, Flutter) | `mobile-developer`    | mobile-design                 |
-| **WEB** (Next.js, React web)           | `frontend-specialist` | frontend-design               |
-| **BACKEND** (API, server, DB)          | `backend-specialist`  | api-patterns, database-design |
+| Project Type                           | Primary Agent           | Skills                        |
+| -------------------------------------- | ----------------------- | ----------------------------- |
+| **MOBILE** (iOS, Android, RN, Flutter) | `mobile-developer`      | mobile-design                 |
+| **WEB** (Next.js, React web)           | `frontend-specialist`   | frontend-design               |
+| **BACKEND** (API, server, DB)          | `backend-specialist`    | api-patterns, database-design |
+| **PHP/LARAVEL** (PHP, Laravel)         | `dandy-code-reviewer`   | dandy-code, clean-code        |
 
 > 🔴 **Mobile + frontend-specialist = WRONG.** Mobile = mobile-developer ONLY.
+> 🔴 **PHP/Laravel + backend-specialist = WRONG.** PHP = dandy-code-reviewer for code quality.
 
 ### 🛑 Socratic Gate
 

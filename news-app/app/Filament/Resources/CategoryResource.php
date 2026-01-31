@@ -35,7 +35,7 @@ class CategoryResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return \Illuminate\Support\Facades\Cache::remember('category_count', 300, fn() => (string) static::getModel()::count());
+        return \Illuminate\Support\Facades\Cache::remember('category_count', 300, fn (): string => (string) static::getModel()::count());
     }
 
     public static function getModelLabel(): string
@@ -92,7 +92,7 @@ class CategoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn($query) => $query->with(['parentCategories'])->withCount('subCategories'))
+            ->modifyQueryUsing(fn ($query) => $query->with(['parentCategories'])->withCount('subCategories'))
             ->deferLoading()
             ->poll('10s')
             ->persistFiltersInSession()
@@ -131,8 +131,8 @@ class CategoryResource extends Resource
                     ->label('Articles')
                     ->summarize(Tables\Columns\Summarizers\Sum::make()),
             ])->filters([
-                    //
-                ])
+                //
+            ])
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->iconButton()

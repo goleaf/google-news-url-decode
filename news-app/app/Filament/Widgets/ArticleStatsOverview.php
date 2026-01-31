@@ -15,21 +15,19 @@ class ArticleStatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        return \Illuminate\Support\Facades\Cache::remember('article_stats', 60, function () {
-            return [
-                Stat::make('Total Articles', Article::count())
-                    ->description('All decoded news')
-                    ->descriptionIcon('heroicon-m-newspaper')
-                    ->color('sky'),
-                Stat::make('Saved Today', Article::whereDate('created_at', today())->count())
-                    ->description('New articles processed')
-                    ->descriptionIcon('heroicon-m-arrow-trending-up')
-                    ->color('emerald'),
-                Stat::make('Sources', Article::distinct('source_name')->count('source_name'))
-                    ->description('Active news domains')
-                    ->descriptionIcon('heroicon-m-globe-alt')
-                    ->color('indigo'),
-            ];
-        });
+        return \Illuminate\Support\Facades\Cache::remember('article_stats', 60, fn (): array => [
+            Stat::make('Total Articles', Article::count())
+                ->description('All decoded news')
+                ->descriptionIcon('heroicon-m-newspaper')
+                ->color('sky'),
+            Stat::make('Saved Today', Article::whereDate('created_at', today())->count())
+                ->description('New articles processed')
+                ->descriptionIcon('heroicon-m-arrow-trending-up')
+                ->color('emerald'),
+            Stat::make('Sources', Article::distinct('source_name')->count('source_name'))
+                ->description('Active news domains')
+                ->descriptionIcon('heroicon-m-globe-alt')
+                ->color('indigo'),
+        ]);
     }
 }

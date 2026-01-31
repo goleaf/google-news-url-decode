@@ -47,7 +47,7 @@ class ForceGuestUser
                 return '';
             }
 
-            public function setRememberToken($value) {}
+            public function setRememberToken($value): void {}
 
             public function getRememberTokenName()
             {

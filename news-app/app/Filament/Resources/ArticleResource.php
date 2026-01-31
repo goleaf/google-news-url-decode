@@ -64,7 +64,7 @@ class ArticleResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return \Illuminate\Support\Facades\Cache::remember('article_count', 300, fn() => (string) static::getModel()::count());
+        return \Illuminate\Support\Facades\Cache::remember('article_count', 300, fn (): string => (string) static::getModel()::count());
     }
 
     public static function getNavigationBadgeColor(): ?string
@@ -108,7 +108,6 @@ class ArticleResource extends Resource
                             ])
                             ->required(),
 
-
                         Forms\Components\Select::make('sources')
                             ->relationship('sources', 'name')
                             ->multiple()
@@ -139,7 +138,7 @@ class ArticleResource extends Resource
 
                         Forms\Components\Placeholder::make('guid')
                             ->label('GUID')
-                            ->content(fn($record) => $record?->guid ?? '-'),
+                            ->content(fn ($record) => $record?->guid ?? '-'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Links')
@@ -164,7 +163,7 @@ class ArticleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn($query) => $query->with(['categories', 'parentArticles', 'sources'])->withCount('relatedArticles'))
+            ->modifyQueryUsing(fn ($query) => $query->with(['categories', 'parentArticles', 'sources'])->withCount('relatedArticles'))
             ->deferLoading()
             ->poll('5s')
             ->persistFiltersInSession()
@@ -180,7 +179,7 @@ class ArticleResource extends Resource
                     ->weight('bold')
                     ->icon('heroicon-m-document-text')
                     ->iconColor('sky')
-                    ->tooltip(fn($record) => $record->title),
+                    ->tooltip(fn ($record) => $record->title),
 
                 Tables\Columns\TextColumn::make('categories.name')
                     ->badge()
@@ -235,9 +234,9 @@ class ArticleResource extends Resource
                     ->iconColor('indigo')
                     ->color('indigo')
                     ->copyable()
-                    ->url(fn($record) => $record->decoded_url)
+                    ->url(fn ($record) => $record->decoded_url)
                     ->openUrlInNewTab()
-                    ->formatStateUsing(fn() => 'Open Link'),
+                    ->formatStateUsing(fn (): string => 'Open Link'),
 
                 Tables\Columns\TextColumn::make('original_url')
                     ->label('Original Link')
@@ -245,9 +244,9 @@ class ArticleResource extends Resource
                     ->iconColor('slate')
                     ->color('slate')
                     ->copyable()
-                    ->url(fn($record) => $record->original_url)
+                    ->url(fn ($record) => $record->original_url)
                     ->openUrlInNewTab()
-                    ->formatStateUsing(fn() => 'Open Original')
+                    ->formatStateUsing(fn (): string => 'Open Original')
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('guid')
@@ -280,7 +279,7 @@ class ArticleResource extends Resource
                     ->multiple()
                     ->preload(),
                 Tables\Filters\Filter::make('has_decoded_url')
-                    ->query(fn($query) => $query->whereNotNull('decoded_url'))
+                    ->query(fn ($query) => $query->whereNotNull('decoded_url'))
                     ->toggle(),
                 Tables\Filters\Filter::make('published_at')
                     ->form([
@@ -291,17 +290,15 @@ class ArticleResource extends Resource
                             ->prefixIcon('heroicon-m-calendar')
                             ->placeholder('Until date...'),
                     ])
-                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
-                        return $query
-                            ->when(
-                                $data['published_from'],
-                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('published_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['published_until'],
-                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('published_at', '<=', $date),
-                            );
-                    }),
+                    ->query(fn (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder => $query
+                        ->when(
+                            $data['published_from'],
+                            fn (\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('published_at', '>=', $date),
+                        )
+                        ->when(
+                            $data['published_until'],
+                            fn (\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('published_at', '<=', $date),
+                        )),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()

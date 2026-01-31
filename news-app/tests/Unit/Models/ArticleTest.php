@@ -14,24 +14,26 @@ class ArticleTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_has_factory()
+    public function it_has_factory(): void
     {
         $article = Article::factory()->create();
         $this->assertInstanceOf(Article::class, $article);
     }
 
     #[Test]
-    public function it_belongs_to_a_source()
+    public function it_belongs_to_many_sources(): void
     {
         $source = Source::factory()->create(['name' => 'Test Source']);
-        $article = Article::factory()->create(['source_id' => $source->id]);
+        $article = Article::factory()->create();
 
-        $this->assertInstanceOf(Source::class, $article->source);
-        $this->assertEquals($source->id, $article->source->id);
+        $article->sources()->attach($source);
+
+        $this->assertTrue($article->sources->contains($source));
+        $this->assertEquals($source->id, $article->sources->first()->id);
     }
 
     #[Test]
-    public function it_belongs_to_many_categories()
+    public function it_belongs_to_many_categories(): void
     {
         $article = Article::factory()->create();
         $categories = Category::factory()->count(3)->create();
@@ -42,12 +44,14 @@ class ArticleTest extends TestCase
     }
 
     #[Test]
-    public function it_can_have_a_parent_and_children()
+    public function it_can_have_parent_and_related_articles(): void
     {
         $parent = Article::factory()->create();
-        $child = Article::factory()->create(['parent_id' => $parent->id]);
+        $child = Article::factory()->create();
 
-        $this->assertTrue($parent->children->contains($child));
-        $this->assertEquals($parent->id, $child->parent->id);
+        $parent->relatedArticles()->attach($child);
+
+        $this->assertTrue($parent->relatedArticles->contains($child));
+        $this->assertTrue($child->parentArticles->contains($parent));
     }
 }

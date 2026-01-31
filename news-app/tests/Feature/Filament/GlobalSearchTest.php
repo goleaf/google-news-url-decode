@@ -21,11 +21,11 @@ class GlobalSearchTest extends TestCase
     }
 
     #[Test]
-    public function it_can_search_globally()
+    public function it_can_search_globally(): void
     {
-        $article = Article::factory()->create(['title' => 'UniqueArticleTitle']);
-        $category = Category::factory()->create(['name' => 'UniqueCategoryName']);
-        $source = Source::factory()->create(['name' => 'UniqueSourceName']);
+        Article::factory()->create(['title' => 'UniqueArticleTitle']);
+        Category::factory()->create(['name' => 'UniqueCategoryName']);
+        Source::factory()->create(['name' => 'UniqueSourceName']);
 
         // Filament global search is handled by a specific component or endpoint
         // In Filament v3, it can be tested through the GlobalSearch component if we find its class

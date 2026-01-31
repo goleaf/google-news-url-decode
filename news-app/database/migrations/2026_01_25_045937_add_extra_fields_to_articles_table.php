@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('articles', function (Blueprint $table) {
+        Schema::table('articles', function (Blueprint $table): void {
             if (! Schema::hasColumn('articles', 'source_url')) {
                 $table->string('source_url')->nullable()->after('source_name');
             }
@@ -20,7 +20,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('articles', function (Blueprint $table) {
+        Schema::table('articles', function (Blueprint $table): void {
             $table->dropColumn(['source_url', 'published_at']);
         });
     }

@@ -21,14 +21,14 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_list_page()
+    public function it_can_render_list_page(): void
     {
         $this->get(CategoryResource::getUrl('index'))
             ->assertSuccessful();
     }
 
     #[Test]
-    public function it_can_list_categories()
+    public function it_can_list_categories(): void
     {
         $categories = Category::factory()->count(5)->create();
 
@@ -38,7 +38,7 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_search_categories()
+    public function it_can_search_categories(): void
     {
         $category = Category::factory()->create(['name' => 'Specific Unique Name']);
         $otherCategory = Category::factory()->create(['name' => 'Other Name']);
@@ -51,14 +51,14 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_render_create_page()
+    public function it_can_render_create_page(): void
     {
         $this->get(CategoryResource::getUrl('create'))
             ->assertSuccessful();
     }
 
     #[Test]
-    public function it_can_create_category()
+    public function it_can_create_category(): void
     {
         Livewire::test(CategoryResource\Pages\CreateCategory::class)
             ->set('data.name', 'New Category')
@@ -71,16 +71,16 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_validates_required_name_when_creating_category()
+    public function it_validates_required_name_when_creating_category(): void
     {
         Livewire::test(CategoryResource\Pages\CreateCategory::class)
-            ->set('data.name', null)
+            ->set('data.name')
             ->call('create')
             ->assertHasErrors(['data.name' => 'required']);
     }
 
     #[Test]
-    public function it_can_render_edit_page()
+    public function it_can_render_edit_page(): void
     {
         $category = Category::factory()->create();
 
@@ -89,7 +89,7 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_update_category()
+    public function it_can_update_category(): void
     {
         $category = Category::factory()->create();
         $newData = Category::factory()->make();
@@ -108,7 +108,7 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_delete_category()
+    public function it_can_delete_category(): void
     {
         $category = Category::factory()->create();
 
@@ -121,7 +121,7 @@ class CategoryResourceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_bulk_delete_categories()
+    public function it_can_bulk_delete_categories(): void
     {
         $categories = Category::factory()->count(3)->create();
 

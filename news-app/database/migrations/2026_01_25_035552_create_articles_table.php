@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('articles', function (Blueprint $table) {
+        Schema::create('articles', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('articles')->cascadeOnDelete(); // Grouping

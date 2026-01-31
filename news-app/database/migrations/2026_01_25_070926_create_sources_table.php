@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sources', function (Blueprint $table) {
+        Schema::create('sources', function (Blueprint $table): void {
             $table->id();
             $table->string('name')->unique();
             $table->string('url')->nullable();

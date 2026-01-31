@@ -13,7 +13,7 @@ class ArticleDatabaseTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_enforces_unique_original_url()
+    public function it_enforces_unique_original_url(): void
     {
         $url = 'http://example.com/unique';
         Article::factory()->create(['original_url' => $url]);
